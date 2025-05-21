@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fecha Actual España</title>
+</head>
+<body>    
+    <div id="fechaActual" style="font-size: 24px; margin: 20px;"></div>
+    
+    <script>
+        function obtenerFechaEspaña() {
+            // Crear fecha con la zona horaria local (España)
+            const ahora = new Date();
+            
+            // Ajustar a la zona horaria de España (UTC+1 o UTC+2 en horario de verano)
+            const opciones = {
+                timeZone: 'Europe/Madrid'
+            };
+            
+            // Obtener componentes de la fecha
+            const dia = ahora.toLocaleDateString('es-ES', { ...opciones, day: '2-digit' });
+            const mes = ahora.toLocaleDateString('es-ES', { ...opciones, month: '2-digit' });
+            const año = ahora.toLocaleDateString('es-ES', { ...opciones, year: 'numeric' });
+            
+            // Formatear como dd-mm-yyyy
+            return `${dia}-${mes}-${año}`;
+        }
+        
+        // Mostrar la fecha al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const fechaEspaña = obtenerFechaEspaña();
+            document.getElementById('fechaActual').textContent = fechaEspaña;
+            
+            // También puedes mostrarlo con un alert
+            // alert(`La fecha actual en España es: ${fechaEspaña}`);
+        });
+    </script>
+</body>
+</html>
