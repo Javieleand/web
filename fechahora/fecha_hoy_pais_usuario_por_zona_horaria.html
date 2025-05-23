@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector de Zona Horaria (Etc/GMT-1)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .result-box {
+            background-color: #f0f8ff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        h1 {
+            color: #2c3e50;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Detección de Zona Horaria: <span class="highlight">Etc/GMT-1</span></h1>
+    
+    <div id="timezone-info" class="result-box">
+        <p>Detectando tu zona horaria y país...</p>
+    </div>
+
+    <div id="date-methods" class="result-box">
+        <h3>📅 Fecha Actual (dd-mm-yyyy):</h3>
+        <p><strong>Con toLocaleDateString:</strong> <span id="locale-date">-</span></p>
+        <p><strong>Con Date puro:</strong> <span id="pure-date">-</span></p>
+    </div>
+
+    <script>
+        // Mapeo de zonas horarias a países (para UTC+1)
+        const timeZoneToCountry = {
+            "Etc/GMT-1": "Zona genérica (UTC+1)",
+            "Atlantic/Canary": "España (Islas Canarias)",
+            "Atlantic/Madeira": "Portugal (Madeira)",
+            "Africa/Casablanca": "Marruecos (en Ramadán)",
+            "Atlantic/Cape_Verde": "Cabo Verde (UTC-1, pero usa GMT+1)"
+        };
+
+        // Función para formatear fecha con toLocaleDateString
+        function getDateWithLocale() {
+            const options = { 
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            };
+            const date = new Date().toLocaleDateString('es-ES', options);
+            return date.replace(/\//g, '-');
+        }
+
+        // Función para formatear fecha con Date puro
+        function getDatePure() {
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        // Detectar y mostrar información
+        function detectTimezone() {
+            const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const isGMTMinus1 = userTimeZone === "Etc/GMT-1";
+            const country = timeZoneToCountry[userTimeZone] || "No identificado (pero UTC+1)";
+
+            let message = `
+                <h3>⏰ Tu zona horaria detectada: <span class="highlight">${userTimeZone}</span></h3>
+                <p><strong>¿Es Etc/GMT-1?</strong> ${isGMTMinus1 ? '✅ Sí' : '❌ No'}</p>
+            `;
+
+            if (isGMTMinus1 || userTimeZone.includes("GMT-1") || userTimeZone.includes("UTC+1")) {
+                message += `
+                    <p><strong>Posible país:</strong> ${country}</p>
+                    <p>ℹ️ <em>Etc/GMT-1 es UTC+1 (signo invertido en esta nomenclatura)</em></p>
+                `;
+            }
+
+            document.getElementById('timezone-info').innerHTML = message;
+            document.getElementById('locale-date').textContent = getDateWithLocale();
+            document.getElementById('pure-date').textContent = getDatePure();
+        }
+
+        // Ejecutar al cargar la página
+        window.onload = detectTimezone;
+    </script>
+</body>
+</html>

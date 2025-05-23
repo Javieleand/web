@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fecha España - toLocaleDateString</title>
+</head>
+<body>
+    <h1>Fecha actual en España (toLocaleDateString)</h1>
+    <div id="fecha-container" style="font-size: 1.5em; margin: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+
+    <script>
+        function obtenerFechaEspaña() {
+            const opciones = {
+                timeZone: 'Europe/Madrid',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            };
+            
+            const fecha = new Date().toLocaleDateString('es-ES', opciones);
+            // Formatear a dd-mm-yyyy (toLocaleDateString devuelve dd/mm/yyyy)
+            return fecha.replace(/\//g, '-');
+        }
+
+        document.getElementById('fecha-container').textContent = 
+            `Fecha actual (toLocaleDateString): ${obtenerFechaEspaña()}`;
+    </script>
+</body>
+</html>

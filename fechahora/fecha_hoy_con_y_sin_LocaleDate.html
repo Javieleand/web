@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparación de métodos fecha España</title>
+    <style>
+        .fecha-box {
+            margin: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fecha actual en España (dd-mm-yyyy)</h1>
+    
+    <div class="fecha-box">
+        <h2>Con toLocaleDateString</h2>
+        <div id="fecha-locale"></div>
+        <p><small>Usa la API de internacionalización de JavaScript</small></p>
+    </div>
+    
+    <div class="fecha-box">
+        <h2>Con Date puro</h2>
+        <div id="fecha-datepuro"></div>
+        <p><small>Usa los métodos básicos del objeto Date</small></p>
+    </div>
+
+    <script>
+        // Método 1: toLocaleDateString
+        function fechaConLocale() {
+            const opciones = {
+                timeZone: 'Europe/Madrid',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            };
+            const fecha = new Date().toLocaleDateString('es-ES', opciones);
+            return fecha.replace(/\//g, '-');
+        }
+
+        // Método 2: Date puro
+        function fechaConDatePuro() {
+            const ahora = new Date();
+            
+            // Ajuste de zona horaria (España está en UTC+1/+2)
+            const offset = ahora.getTimezoneOffset();
+            const offsetEspaña = offset + (offset > 0 ? 120 : 60);
+            ahora.setMinutes(ahora.getMinutes() + offsetEspaña);
+            
+            const dia = String(ahora.getDate()).padStart(2, '0');
+            const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+            const año = ahora.getFullYear();
+            
+            return `${dia}-${mes}-${año}`;
+        }
+
+        // Mostrar resultados
+        document.getElementById('fecha-locale').textContent = fechaConLocale();
+        document.getElementById('fecha-datepuro').textContent = fechaConDatePuro();
+    </script>
+</body>
+</html>

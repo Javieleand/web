@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fecha Actual - País del Usuario</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .method-container {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .info {
+            background-color: #e8f4f8;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Fecha Actual en tu País</h1>
+    <p>Se detectará automáticamente tu ubicación para mostrar la fecha local.</p>
+
+    <div class="method-container">
+        <h2>Método con toLocaleDateString</h2>
+        <div id="fecha-locale">Cargando...</div>
+        <div class="info">
+            <strong>País detectado:</strong> <span id="pais-locale">Detectando...</span><br>
+            <strong>Zona horaria:</strong> <span id="tz-locale">-</span>
+        </div>
+    </div>
+
+    <div class="method-container">
+        <h2>Método con Date puro</h2>
+        <div id="fecha-datepuro">Cargando...</div>
+        <div class="info">
+            <strong>País detectado:</strong> <span id="pais-datepuro">Detectando...</span><br>
+            <strong>Zona horaria:</strong> <span id="tz-datepuro">-</span>
+        </div>
+    </div>
+
+    <script>
+        // Función para detectar el país del usuario
+        function detectarPais() {
+            return new Promise((resolve, reject) => {
+                // Primero intentamos con la API de internacionalización
+                const locale = Intl.DateTimeFormat().resolvedOptions().locale;
+                const region = locale.split('-')[1];
+                
+                if (region) {
+                    resolve(region);
+                } else {
+                    // Si no funciona, intentamos con la API de geolocalización
+                    if (navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            position => {
+                                fetch(`https://geocode.xyz/${position.coords.latitude},${position.coords.longitude}?json=1`)
+                                    .then(response => response.json())
+                                    .then(data => resolve(data.country))
+                                    .catch(() => resolve('ES')); // Fallback a España
+                            },
+                            () => resolve('ES') // Fallback a España si el usuario deniega
+                        );
+                    } else {
+                        resolve('ES'); // Fallback a España si no hay soporte
+                    }
+                }
+            });
+        }
+
+        // Obtener zona horaria del navegador
+        function getTimeZone() {
+            return Intl.DateTimeFormat().resolvedOptions().timeZone;
+        }
+
+        // Método 1: Usando toLocaleDateString
+        async function mostrarFechaConLocale() {
+            const pais = await detectarPais();
+            const timeZone = getTimeZone();
+            const opciones = {
+                timeZone: timeZone,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            };
+            
+            // Formatear según el país (dd-mm-yyyy para España, mm/dd/yyyy para EE.UU., etc.)
+            const formato = pais === 'ES' ? 'es-ES' : 'default';
+            const fecha = new Date().toLocaleDateString(formato, opciones);
+            const fechaFormateada = pais === 'ES' ? fecha.replace(/\//g, '-') : fecha;
+            
+            document.getElementById('fecha-locale').textContent = fechaFormateada;
+            document.getElementById('pais-locale').textContent = pais;
+            document.getElementById('tz-locale').textContent = timeZone;
+        }
+
+        // Método 2: Usando Date puro (con ajuste de zona horaria)
+        async function mostrarFechaConDatePuro() {
+            const pais = await detectarPais();
+            const ahora = new Date();
+            
+            // No podemos detectar perfectamente la zona horaria con Date puro,
+            // pero usamos la hora local del navegador que ya está ajustada
+            
+            const dia = String(ahora.getDate()).padStart(2, '0');
+            const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+            const año = ahora.getFullYear();
+            
+            // Formatear según el país
+            const fechaFormateada = pais === 'ES' ? `${dia}-${mes}-${año}` : `${mes}/${dia}/${año}`;
+            
+            document.getElementById('fecha-datepuro').textContent = fechaFormateada;
+            document.getElementById('pais-datepuro').textContent = pais;
+            document.getElementById('tz-datepuro').textContent = getTimeZone();
+        }
+
+        // Ejecutar al cargar la página
+        window.addEventListener('load', () => {
+            mostrarFechaConLocale();
+            mostrarFechaConDatePuro();
+        });
+    </script>
+</body>
+</html>

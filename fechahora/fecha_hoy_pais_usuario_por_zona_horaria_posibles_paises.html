@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Países con UTC+1 (Etc/GMT-1)</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f9f9f9;
+        }
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        ul {
+            columns: 2;
+            column-gap: 30px;
+        }
+        li {
+            margin-bottom: 8px;
+        }
+        .method {
+            background-color: #f0f8ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🌍 Países/Regiones con Zona Horaria <span class="highlight">UTC+1</span> (Etc/GMT-1)</h1>
+        
+        <div id="user-info" class="card">
+            <h3>📍 Tu ubicación detectada:</h3>
+            <p><strong>Zona horaria:</strong> <span id="user-timezone">Detectando...</span></p>
+            <p><strong>Posible país:</strong> <span id="user-country">-</span></p>
+            <p><strong>Fecha local:</strong> <span id="user-date">-</span></p>
+        </div>
+
+        <div class="card">
+            <h3>🔍 Lista completa de países/regiones en UTC+1:</h3>
+            <ul id="country-list">
+                <!-- Lista generada por JavaScript -->
+            </ul>
+            <p><em>Nota: Algunas regiones solo usan UTC+1 en horario de invierno.</em></p>
+        </div>
+
+        <div class="method">
+            <h3>📅 Métodos para obtener la fecha:</h3>
+            <p><strong>1. toLocaleDateString:</strong> <span id="locale-date">-</span></p>
+            <p><strong>2. Date puro:</strong> <span id="pure-date">-</span></p>
+        </div>
+    </div>
+
+    <script>
+        // Lista completa de países/regiones en UTC+1 (y sus zonas horarias específicas)
+        const utcPlusOneLocations = [
+            { country: "España", zones: ["Atlantic/Canary"], notes: "Islas Canarias" },
+            { country: "Portugal", zones: ["Atlantic/Madeira", "Atlantic/Azores"], notes: "Azores UTC+0 en invierno" },
+            { country: "Andorra", zones: ["Europe/Andorra"] },
+            { country: "Francia", zones: ["Europe/Paris"] },
+            { country: "Alemania", zones: ["Europe/Berlin", "Europe/Busingen"] },
+            { country: "Italia", zones: ["Europe/Rome"] },
+            { country: "Suiza", zones: ["Europe/Zurich"] },
+            { country: "Bélgica", zones: ["Europe/Brussels"] },
+            { country: "Países Bajos", zones: ["Europe/Amsterdam"] },
+            { country: "Luxemburgo", zones: ["Europe/Luxembourg"] },
+            { country: "Mónaco", zones: ["Europe/Monaco"] },
+            { country: "Noruega", zones: ["Europe/Oslo"] },
+            { country: "Suecia", zones: ["Europe/Stockholm"] },
+            { country: "Dinamarca", zones: ["Europe/Copenhagen"] },
+            { country: "Polonia", zones: ["Europe/Warsaw"] },
+            { country: "República Checa", zones: ["Europe/Prague"] },
+            { country: "Hungría", zones: ["Europe/Budapest"] },
+            { country: "Eslovaquia", zones: ["Europe/Bratislava"] },
+            { country: "Eslovenia", zones: ["Europe/Ljubljana"] },
+            { country: "Argelia", zones: ["Africa/Algiers"] },
+            { country: "Túnez", zones: ["Africa/Tunis"] },
+            { country: "Marruecos", zones: ["Africa/Casablanca"], notes: "UTC+0 en horario estándar, UTC+1 en Ramadán" },
+            { country: "República del Congo", zones: ["Africa/Brazzaville"] },
+            { country: "Angola", zones: ["Africa/Luanda"] },
+            { country: "Gabón", zones: ["Africa/Libreville"] },
+            { country: "Guinea Ecuatorial", zones: ["Africa/Malabo"] },
+            { country: "Chad", zones: ["Africa/Ndjamena"] },
+            { country: "Camerún", zones: ["Africa/Douala"] },
+            { country: "Benín", zones: ["Africa/Porto-Novo"] },
+            { country: "Níger", zones: ["Africa/Niamey"] }
+        ];
+
+        // Generar la lista HTML
+        function renderCountryList() {
+            const listElement = document.getElementById('country-list');
+            utcPlusOneLocations.forEach(location => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${location.country}</strong>`;
+                if (location.notes) {
+                    li.innerHTML += ` <em>(${location.notes})</em>`;
+                }
+                listElement.appendChild(li);
+            });
+        }
+
+        // Detectar la zona horaria del usuario
+        function detectUserTimezone() {
+            const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            document.getElementById('user-timezone').textContent = userTimeZone;
+
+            // Buscar coincidencia en la lista
+            const userLocation = utcPlusOneLocations.find(loc => 
+                loc.zones.includes(userTimeZone)
+            );
+
+            const country = userLocation 
+                ? `${userLocation.country}${userLocation.notes ? ` (${userLocation.notes})` : ''}` 
+                : "No identificado (pero posible UTC+1)";
+
+            document.getElementById('user-country').textContent = country;
+            document.getElementById('user-date').textContent = getCurrentFormattedDate();
+        }
+
+        // Obtener fecha formateada
+        function getCurrentFormattedDate() {
+            const now = new Date();
+            // Método 1: toLocaleDateString
+            const localeDate = now.toLocaleDateString('es-ES', {
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }).replace(/\//g, '-');
+            document.getElementById('locale-date').textContent = localeDate;
+
+            // Método 2: Date puro
+            const pureDate = `${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+            document.getElementById('pure-date').textContent = pureDate;
+
+            return localeDate;
+        }
+
+        // Inicializar
+        window.onload = function() {
+            renderCountryList();
+            detectUserTimezone();
+        };
+    </script>
+</body>
+</html>

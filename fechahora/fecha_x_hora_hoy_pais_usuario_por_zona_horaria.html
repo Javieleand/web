@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector de Hora y País Exacto</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .method {
+            background: #eaf2f8;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .real-time {
+            font-size: 1.8em;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            color: #16a085;
+        }
+        #world-clock {
+            font-size: 1.3em;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🕒 Detector Preciso de Hora Local y País</h1>
+        
+        <div id="user-info" class="card">
+            <h2>📍 Tu ubicación exacta:</h2>
+            <div class="real-time" id="world-clock">
+                ⌛ Cargando hora exacta...
+            </div>
+            <div class="info-grid">
+                <div>
+                    <p><strong>Zona horaria:</strong> <span id="user-timezone">-</span></p>
+                    <p><strong>País/Región:</strong> <span id="user-country">-</span></p>
+                    <p><strong>UTC Offset:</strong> <span id="utc-offset">-</span></p>
+                </div>
+                <div>
+                    <p><strong>Hora local:</strong> <span id="local-time">-</span></p>
+                    <p><strong>Fecha local:</strong> <span id="local-date">-</span></p>
+                    <p><strong>Horario de verano:</strong> <span id="dst">-</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>⚙️ Comparación de Métodos</h2>
+            <div class="info-grid">
+                <div class="method">
+                    <h3>toLocaleString()</h3>
+                    <p><strong>Hora:</strong> <span id="locale-time">-</span></p>
+                    <p><strong>Fecha:</strong> <span id="locale-date">-</span></p>
+                    <p><strong>Zona:</strong> <span id="locale-tz">-</span></p>
+                </div>
+                <div class="method">
+                    <h3>Date puro</h3>
+                    <p><strong>Hora:</strong> <span id="pure-time">-</span></p>
+                    <p><strong>Fecha:</strong> <span id="pure-date">-</span></p>
+                    <p><strong>UTC:</strong> <span id="pure-utc">-</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mapeo detallado de zonas horarias a países
+        const timeZoneDatabase = {
+            "Europe/Madrid": { country: "España (Península)", offset: "+1", dst: true },
+            "Atlantic/Canary": { country: "España (Canarias)", offset: "+0", dst: false },
+            "Europe/Paris": { country: "Francia", offset: "+1", dst: true },
+            "Europe/Berlin": { country: "Alemania", offset: "+1", dst: true },
+            "Africa/Algiers": { country: "Argelia", offset: "+1", dst: false },
+            // ... (agrega más zonas según necesites)
+        };
+
+        // Actualizar la hora en tiempo real
+        function updateWorldClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('es-ES', { 
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            document.getElementById('world-clock').innerHTML = `🕒 ${timeStr}`;
+        }
+
+        // Detección precisa de ubicación
+        function detectExactLocation() {
+            const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const now = new Date();
+            
+            // Información de zona horaria
+            document.getElementById('user-timezone').textContent = userTimeZone;
+            
+            // Detectar país
+            const location = timeZoneDatabase[userTimeZone] || { 
+                country: "Zona no especificada", 
+                offset: now.getTimezoneOffset() / -60,
+                dst: false
+            };
+            document.getElementById('user-country').textContent = location.country;
+            
+            // UTC Offset
+            const offset = now.getTimezoneOffset() / -60;
+            document.getElementById('utc-offset').textContent = `UTC${offset >= 0 ? '+' : ''}${offset}`;
+            
+            // Horario de verano
+            const isDST = new Date().getTimezoneOffset() < Math.max(
+                new Date(2023, 0, 1).getTimezoneOffset(),
+                new Date(2023, 6, 1).getTimezoneOffset()
+            );
+            document.getElementById('dst').textContent = isDST ? '✅ Activo' : '❌ Inactivo';
+            
+            // Actualizar métodos
+            updateMethods();
+        }
+
+        // Comparación de métodos
+        function updateMethods() {
+            const now = new Date();
+            const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            
+            // Método 1: toLocaleString (preciso)
+            document.getElementById('locale-time').textContent = now.toLocaleTimeString('es-ES', {
+                timeZone: userTimeZone,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            
+            document.getElementById('locale-date').textContent = now.toLocaleDateString('es-ES', {
+                timeZone: userTimeZone,
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            }).replace(/\//g, '-');
+            
+            document.getElementById('locale-tz').textContent = userTimeZone;
+            
+            // Método 2: Date puro (hora del sistema)
+            document.getElementById('pure-time').textContent = 
+                `${String(now.getHours()).padStart(2, '0')}:` +
+                `${String(now.getMinutes()).padStart(2, '0')}:` +
+                `${String(now.getSeconds()).padStart(2, '0')}`;
+                
+            document.getElementById('pure-date').textContent = 
+                `${String(now.getDate()).padStart(2, '0')}-` +
+                `${String(now.getMonth() + 1).padStart(2, '0')}-` +
+                `${now.getFullYear()}`;
+                
+            document.getElementById('pure-utc').textContent = now.toUTCString();
+            
+            // Actualizar hora local
+            document.getElementById('local-time').textContent = 
+                now.toLocaleTimeString('es-ES', { hour12: false });
+            document.getElementById('local-date').textContent = 
+                now.toLocaleDateString('es-ES').replace(/\//g, '-');
+        }
+
+        // Inicialización
+        window.onload = function() {
+            detectExactLocation();
+            updateWorldClock();
+            setInterval(updateWorldClock, 1000);
+            setInterval(detectExactLocation, 60000); // Actualizar cada minuto
+        };
+    </script>
+</body>
+</html>

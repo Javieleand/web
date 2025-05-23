@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector de País/Región y Hora Exacta</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .highlight {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .method {
+            background: #eaf2f8;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .real-time {
+            font-size: 1.8em;
+            text-align: center;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            color: #16a085;
+        }
+        #map {
+            height: 300px;
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+</head>
+<body>
+    <div class="card">
+        <h1>🌍 Detector de País/Región con Hora Exacta</h1>
+        
+        <div id="user-info" class="card">
+            <h2>📍 Tu ubicación exacta:</h2>
+            <div class="real-time" id="world-clock">
+                ⌛ Cargando hora exacta...
+            </div>
+            <div class="info-grid">
+                <div>
+                    <p><strong>País/Región:</strong> <span id="user-country">-</span></p>
+                    <p><strong>Ciudad:</strong> <span id="user-city">-</span></p>
+                    <p><strong>Código de país:</strong> <span id="country-code">-</span></p>
+                </div>
+                <div>
+                    <p><strong>Zona horaria:</strong> <span id="user-timezone">-</span></p>
+                    <p><strong>Hora local:</strong> <span id="local-time">-</span></p>
+                    <p><strong>Fecha local:</strong> <span id="local-date">-</span></p>
+                </div>
+            </div>
+            <button id="locate-btn">📍 Obtener mi ubicación exacta</button>
+            <div id="map"></div>
+        </div>
+
+        <div class="card">
+            <h2>⚙️ Comparación de Métodos</h2>
+            <div class="info-grid">
+                <div class="method">
+                    <h3>API de Geolocalización</h3>
+                    <p><strong>Latitud:</strong> <span id="latitude">-</span></p>
+                    <p><strong>Longitud:</strong> <span id="longitude">-</span></p>
+                    <p><strong>Precisión:</strong> <span id="accuracy">-</span> metros</p>
+                </div>
+                <div class="method">
+                    <h3>Métodos de Fecha/Hora</h3>
+                    <p><strong>Hora UTC:</strong> <span id="utc-time">-</span></p>
+                    <p><strong>UTC Offset:</strong> <span id="utc-offset">-</span></p>
+                    <p><strong>Horario verano:</strong> <span id="dst">-</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // Variables globales
+        let map;
+        let marker;
+        let countryData = {
+            name: null,
+            city: null,
+            code: null,
+            coords: null
+        };
+
+        // Inicializar el mapa
+        function initMap(lat, lng) {
+            if (!map) {
+                map = L.map('map').setView([lat, lng], 13);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+            }
+            
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            
+            marker = L.marker([lat, lng]).addTo(map)
+                .bindPopup("Tu ubicación actual")
+                .openPopup();
+            
+            document.getElementById('map').style.display = 'block';
+        }
+
+        // Obtener información del país mediante API de geolocalización inversa
+        async function getCountryInfo(latitude, longitude) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+                const data = await response.json();
+                
+                countryData = {
+                    name: data.address.country || "Desconocido",
+                    city: data.address.city || data.address.town || data.address.village || "Desconocida",
+                    code: data.address.country_code ? data.address.country_code.toUpperCase() : "XX",
+                    coords: { lat: latitude, lng: longitude }
+                };
+                
+                updateLocationDisplay();
+                initMap(latitude, longitude);
+            } catch (error) {
+                console.error("Error al obtener información del país:", error);
+                document.getElementById('user-country').textContent = "No se pudo determinar (permiso denegado)";
+            }
+        }
+
+        // Actualizar la visualización de la ubicación
+        function updateLocationDisplay() {
+            document.getElementById('user-country').textContent = countryData.name;
+            document.getElementById('user-city').textContent = countryData.city;
+            document.getElementById('country-code').textContent = countryData.code;
+            
+            if (countryData.coords) {
+                document.getElementById('latitude').textContent = countryData.coords.lat.toFixed(4);
+                document.getElementById('longitude').textContent = countryData.coords.lng.toFixed(4);
+            }
+        }
+
+        // Actualizar la hora en tiempo real
+        function updateWorldClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('es-ES', { 
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            document.getElementById('world-clock').innerHTML = `🕒 ${timeStr}`;
+            
+            // Actualizar métodos de fecha/hora
+            document.getElementById('local-time').textContent = timeStr;
+            document.getElementById('local-date').textContent = now.toLocaleDateString('es-ES').replace(/\//g, '-');
+            document.getElementById('utc-time').textContent = now.toUTCString();
+            
+            const offset = -now.getTimezoneOffset() / 60;
+            document.getElementById('utc-offset').textContent = `UTC${offset >= 0 ? '+' : ''}${offset}`;
+            
+            const isDST = new Date().getTimezoneOffset() < Math.max(
+                new Date(2023, 0, 1).getTimezoneOffset(),
+                new Date(2023, 6, 1).getTimezoneOffset()
+            );
+            document.getElementById('dst').textContent = isDST ? '✅ Activo' : '❌ Inactivo';
+        }
+
+        // Obtener ubicación exacta del usuario
+        function getExactLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        document.getElementById('accuracy').textContent = position.coords.accuracy.toFixed(0);
+                        getCountryInfo(position.coords.latitude, position.coords.longitude);
+                    },
+                    (error) => {
+                        console.error("Error de geolocalización:", error);
+                        document.getElementById('user-country').textContent = "Permiso denegado - Usando zona horaria";
+                        getLocationFromTimezone();
+                    },
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            } else {
+                document.getElementById('user-country').textContent = "Geolocalización no soportada";
+                getLocationFromTimezone();
+            }
+        }
+
+        // Obtener ubicación aproximada por zona horaria
+        function getLocationFromTimezone() {
+            const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            document.getElementById('user-timezone').textContent = userTimeZone;
+            
+            // Intenta extraer país de la zona horaria
+            const match = userTimeZone.match(/\/([^/]+)$/);
+            if (match) {
+                const region = match[1].replace(/_/g, ' ');
+                document.getElementById('user-country').textContent = region;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('locate-btn').addEventListener('click', getExactLocation);
+
+        // Inicialización
+        window.onload = function() {
+            // Primero intentamos con la zona horaria
+            getLocationFromTimezone();
+            
+            // Configuramos el reloj
+            updateWorldClock();
+            setInterval(updateWorldClock, 1000);
+            
+            // Intentamos geolocalización automática (si el usuario lo permite)
+            getExactLocation();
+        };
+    </script>
+</body>
+</html>
